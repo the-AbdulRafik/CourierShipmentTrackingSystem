@@ -47,41 +47,55 @@ class SearchService
             return _shipmentService.GetAllShipments().Where(criteria).ToList();
         }
 
-        public List<Shipment> GetShipmentsForCustomer(string customerId)
+        public List<Shipment> ShipmentsForCustomer(string customerId)
         {
-            return FilterShipments(s =>
-                s.SenderCustomerId.Equals(customerId, StringComparison.OrdinalIgnoreCase));
+            return FilterShipments(s => s.SenderCustomerId.Equals(customerId, StringComparison.OrdinalIgnoreCase));
         }
 
-        public List<Shipment> GetInTransitShipments()
+        public List<Shipment> ShipmentsByStatus(string status)
         {
-            return FilterShipments(s => s.CurrentStatus == "InTransit");
+            return FilterShipments(s => s.CurrentStatus.Equals(status, StringComparison.OrdinalIgnoreCase));
         }
 
-        public List<Shipment> GetOutForDeliveryShipments()
+        public List<Shipment> ShipmentsByDestination(string destination)
         {
-            return FilterShipments(s => s.CurrentStatus == "OutForDelivery");
+            return FilterShipments(s => s.DestinationAddress.Contains(destination, StringComparison.OrdinalIgnoreCase));
         }
 
-        public Dictionary<string, decimal> GetFeesByStatus()
+        public Dictionary<string, decimal> FeesByStatus()
         {
             return _shipmentService.GetAllShipments()
                 .GroupBy(s => s.CurrentStatus)
                 .ToDictionary(g => g.Key, g => g.Sum(s => s.ShippingFee));
         }
 
-        public Dictionary<string, decimal> GetFeesByDestination()
+        public Dictionary<string, decimal> FeesByDestination()
         {
             return _shipmentService.GetAllShipments()
                 .GroupBy(s => s.DestinationAddress)
                 .ToDictionary(g => g.Key, g => g.Sum(s => s.ShippingFee));
         }
 
-        public int GetPendingCount()
+        public int CountPending()
         {
             return _shipmentService.GetAllShipments()
-                .Count(s => s.CurrentStatus == "Created" ||
-                            s.CurrentStatus == "PickedUp");
+                .Count(s => s.CurrentStatus == "Created" || s.CurrentStatus == "PickedUp");
+        }
+
+        public int CountByStatus(string status)
+        {
+            return _shipmentService.GetAllShipments()
+                .Count(s => s.CurrentStatus.Equals(status, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public List<Shipment> InTransitShipments()
+        {
+            return ShipmentsByStatus("InTransit");
+        }
+
+        public List<Shipment> OutForDeliveryShipments()
+        {
+            return ShipmentsByStatus("OutForDelivery");
         }
 
         // Count delivered, pending, cancelled, and in-transit shipments.
