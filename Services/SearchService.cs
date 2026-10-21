@@ -47,6 +47,43 @@ class SearchService
             return _shipmentService.GetAllShipments().Where(criteria).ToList();
         }
 
+        public List<Shipment> GetShipmentsForCustomer(string customerId)
+        {
+            return FilterShipments(s =>
+                s.SenderCustomerId.Equals(customerId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public List<Shipment> GetInTransitShipments()
+        {
+            return FilterShipments(s => s.CurrentStatus == "InTransit");
+        }
+
+        public List<Shipment> GetOutForDeliveryShipments()
+        {
+            return FilterShipments(s => s.CurrentStatus == "OutForDelivery");
+        }
+
+        public Dictionary<string, decimal> GetFeesByStatus()
+        {
+            return _shipmentService.GetAllShipments()
+                .GroupBy(s => s.CurrentStatus)
+                .ToDictionary(g => g.Key, g => g.Sum(s => s.ShippingFee));
+        }
+
+        public Dictionary<string, decimal> GetFeesByDestination()
+        {
+            return _shipmentService.GetAllShipments()
+                .GroupBy(s => s.DestinationAddress)
+                .ToDictionary(g => g.Key, g => g.Sum(s => s.ShippingFee));
+        }
+
+        public int GetPendingCount()
+        {
+            return _shipmentService.GetAllShipments()
+                .Count(s => s.CurrentStatus == "Created" ||
+                            s.CurrentStatus == "PickedUp");
+        }
+
         // Count delivered, pending, cancelled, and in-transit shipments.
         
         public Dictionary<string, int> CountShipments(Func<Shipment, string> criteria)
